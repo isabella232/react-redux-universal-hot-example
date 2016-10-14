@@ -1,3 +1,4 @@
+/* eslint-disable vars-on-top,no-var,new-cap */
 require('babel-polyfill');
 
 // Webpack config for creating the production bundle.
@@ -7,7 +8,7 @@ var CleanPlugin = require('clean-webpack-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var strip = require('strip-loader');
 var HappyPack = require('happypack');
-var happyThreadPool = HappyPack.ThreadPool({ size: 2 });
+var happyThreadPool = HappyPack.ThreadPool({ size: 4 });
 
 var projectRootPath = path.resolve(__dirname, '../');
 var assetsPath = path.resolve(projectRootPath, './static/dist');
@@ -15,6 +16,23 @@ var assetsPath = path.resolve(projectRootPath, './static/dist');
 // https://github.com/halt-hammerzeit/webpack-isomorphic-tools
 var WebpackIsomorphicToolsPlugin = require('webpack-isomorphic-tools/plugin');
 var webpackIsomorphicToolsPlugin = new WebpackIsomorphicToolsPlugin(require('./webpack-isomorphic-tools'));
+
+function createHappyPlugin(id, loaders) {
+  return new HappyPack({
+    id: id,
+    loaders: loaders,
+    threadPool: happyThreadPool,
+
+    // disable happypack with HAPPY=0
+    enabled: process.env.HAPPY !== '0',
+
+    // disable happypack caching with HAPPY_CACHE=0
+    cache: process.env.HAPPY_CACHE !== '0',
+
+    // make happypack more verbose with HAPPY_VERBOSE=1
+    verbose: process.env.HAPPY_VERBOSE === '1',
+  });
+}
 
 module.exports = {
   devtool: 'source-map',
@@ -35,15 +53,14 @@ module.exports = {
   module: {
     loaders: [
       { test: /\.jsx?$/, exclude: /node_modules/, loader: 'happypack/loader?id=js' },
-      { test: /\.json$/, loader: 'json-loader' },
-      { test: /\.less$/, loader: ExtractTextPlugin.extract('style', 'happypack/loader?id=less') },
-      { test: /\.scss$/, loader: ExtractTextPlugin.extract('style', 'happypack/loader?id=sass') },
-      { test: /\.woff(\?v=\d+\.\d+\.\d+)?$/, loader: "url?limit=10000&mimetype=application/font-woff" },
-      { test: /\.woff2(\?v=\d+\.\d+\.\d+)?$/, loader: "url?limit=10000&mimetype=application/font-woff" },
-      { test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/, loader: "url?limit=10000&mimetype=application/octet-stream" },
-      { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: "file" },
-      { test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, loader: "url?limit=10000&mimetype=image/svg+xml" },
-      { test: webpackIsomorphicToolsPlugin.regular_expression('images'), loader: 'url-loader?limit=10240' }
+      { test: /\.json$/, loader: 'json' },
+      { test: /\.less$/, loader: ExtractTextPlugin.extract('style', ['css?module&importLoaders=2&sourceMap&-minimize&-autoprefixer', 'postcss?parser=postcss-scss', 'less']) },
+      { test: /\.scss$/, loader: ExtractTextPlugin.extract('style', ['css?module&importLoaders=2&sourceMap&-minimize&-autoprefixer', 'postcss?parser=postcss-scss', 'sass']) },
+      { test: /\.woff2?(\?v=\d+\.\d+\.\d+)?$/, loader: 'url?limit=10000&mimetype=application/font-woff' },
+      { test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/, loader: 'url?limit=10000&mimetype=application/octet-stream' },
+      { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: 'file' },
+      { test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, loader: 'url?limit=10000&mimetype=image/svg+xml' },
+      { test: webpackIsomorphicToolsPlugin.regular_expression('images'), loader: 'url?limit=10240' }
     ]
   },
   progress: true,
@@ -83,26 +100,20 @@ module.exports = {
     }),
 
     webpackIsomorphicToolsPlugin,
-    createHappyPlugin('js', [ strip.loader('debug'), 'babel' ]),
-    createHappyPlugin('less', [ 'css?modules&importLoaders=2&sourceMap!autoprefixer?browsers=last 2 version!less?outputStyle=expanded&sourceMap=true&sourceMapContents=true' ]),
-    createHappyPlugin('sass', [ 'css?modules&importLoaders=2&sourceMap!autoprefixer?browsers=last 2 version!sass?outputStyle=expanded&sourceMap=true&sourceMapContents=true' ])
+    createHappyPlugin('js', [ strip.loader('debug'), 'babel' ])
+  ],
+  sassLoader: {
+    outputStyle: 'expanded',
+    sourceMap: true,
+    sourceMapContents: true,
+  },
+  lessLoader: {
+    outputStyle: 'expanded',
+    sourceMap: true,
+    sourceMapContents: true,
+  },
+  postcss: [
+    require('autoprefixer'),
+    require('cssnano')({ safe: true })
   ]
 };
-
-function createHappyPlugin(id, loaders) {
-  return new HappyPack({
-    id: id,
-    loaders: loaders,
-    threadPool: happyThreadPool,
-
-    // disable happypack with HAPPY=0
-    enabled: process.env.HAPPY !== '0',
-
-    // disable happypack caching with HAPPY_CACHE=0
-    cache: process.env.HAPPY_CACHE !== '0',
-
-    // make happypack more verbose with HAPPY_VERBOSE=1
-    verbose: process.env.HAPPY_VERBOSE === '1',
-  });
-}
-
