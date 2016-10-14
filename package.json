@@ -62,6 +62,7 @@
       "env": {
         "NODE_PATH": "./src",
         "NODE_ENV": "development",
+        "WEBPACK_DLLS": "1",
         "PORT": 3000,
         "APIPORT": 3030
       }
