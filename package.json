@@ -28,6 +28,7 @@
     "start-prod": "better-npm-run start-prod",
     "start-prod-api": "better-npm-run start-prod-api",
     "build": "better-npm-run build",
+    "build-dlls": "./node_modules/.bin/webpack --config webpack/dlls/vendor/webpack.config.js",
     "postinstall": "npm run build",
     "lint": "eslint -c .eslintrc src api",
     "start-dev": "better-npm-run start-dev",
@@ -78,6 +79,7 @@
       "env": {
         "UV_THREADPOOL_SIZE": 100,
         "NODE_PATH": "./src",
+        "WEBPACK_DLLS": "1",
         "PORT": 3000,
         "APIPORT": 3030
       }
