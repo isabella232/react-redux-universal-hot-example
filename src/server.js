@@ -1,6 +1,6 @@
 import Express from 'express';
 import React from 'react';
-import ReactDOMStream from 'react-dom-stream/server';
+import ReactDOM from 'react-dom/server';
 import config from './config';
 import favicon from 'serve-favicon';
 import compression from 'compression';
@@ -72,10 +72,8 @@ app.use((req, res) => {
   const history = syncHistoryWithStore(memoryHistory, store);
 
   function hydrateOnClient() {
-    const stream = ReactDOMStream.rednerToString(<Html assets={webpackIsomorphicTools.assets()} store={store}/>);
-    stream.unshift('<!doctype html>\n');
-    stream.pipe(res, {end: false});
-    stream.on('end', () => res.end());
+    res.send('<!doctype html>\n' +
+      ReactDOM.renderToString(<Html assets={webpackIsomorphicTools.assets()} store={store}/>));
   }
 
   if (__DISABLE_SSR__) {
@@ -102,10 +100,8 @@ app.use((req, res) => {
 
         global.navigator = {userAgent: req.headers['user-agent']};
 
-        const stream = ReactDOMStream.renderToStaticMarkup(<Html assets={webpackIsomorphicTools.assets()} component={component} store={store}/>);
-        stream.unshift('<!doctype html>\n');
-        stream.pipe(res, {end: false});
-        stream.on('end', () => res.end());
+        res.send('<!doctype html>\n' +
+          ReactDOM.renderToString(<Html assets={webpackIsomorphicTools.assets()} component={component} store={store}/>));
       });
     } else {
       res.status(404).send('Not found');
