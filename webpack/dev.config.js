@@ -5,6 +5,8 @@ var fs = require('fs');
 var path = require('path');
 var webpack = require('webpack');
 var HappyPack = require('happypack');
+var WebpackHelpers = require('./helpers');
+
 var happyThreadPool = HappyPack.ThreadPool({ size: 2 });
 var assetsPath = path.resolve(__dirname, '../static/dist');
 var host = (process.env.HOST || 'localhost');
@@ -80,7 +82,7 @@ function createHappyPlugin(id, loaders) {
   });
 }
 
-module.exports = {
+var webpackConfig = module.exports = {
   devtool: 'inline-source-map',
   context: path.resolve(__dirname, '..'),
   entry: {
@@ -107,7 +109,7 @@ module.exports = {
       { test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/, loader: 'url?limit=10000&mimetype=application/octet-stream' },
       { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: 'file' },
       { test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, loader: 'url?limit=10000&mimetype=image/svg+xml' },
-      { test: webpackIsomorphicToolsPlugin.regular_expression('images'), loader: 'url-loader?limit=10240' }
+      { test: webpackIsomorphicToolsPlugin.regular_expression('images'), loader: 'url?limit=10240' }
     ]
   },
   progress: true,
@@ -126,6 +128,7 @@ module.exports = {
       __CLIENT__: true,
       __SERVER__: false,
       __DEVELOPMENT__: true,
+      __DLLS__: process.env.WEBPACK_DLLS === '1',
       __DEVTOOLS__: true  // <-------- DISABLE redux-devtools HERE
     }),
     webpackIsomorphicToolsPlugin.development(),
@@ -142,3 +145,7 @@ module.exports = {
     sourceMap: true
   }
 };
+
+if (process.env.WEBPACK_DLLS === '1') {
+  WebpackHelpers.installVendorDLL(webpackConfig, 'vendor');
+}
